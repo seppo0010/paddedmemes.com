@@ -3,6 +3,7 @@ import util from 'node:util';
 import { spawn } from 'node:child_process'
 import { franc, francAll } from 'franc'
 import tqdm from 'tqdm';
+import MiniSearch from 'minisearch'
 
 (async () => {
 
@@ -51,6 +52,13 @@ for (const [i, photo] of tqdm(photos.entries(), { total: photos.length })) {
   } catch (e) {}
   fs.writeFileSync(photoDataPath, JSON.stringify(photo));
 }
-console.log(JSON.stringify({ photos }));
+
+const miniSearch = new MiniSearch({
+  idField: 'photo',
+  fields: ['text'],
+  storeFields: ['date_unixtime', 'photo', 'width', 'height', 'text'],
+})
+miniSearch.addAll(photos);
+fs.writeFileSync(`${base_dir}/db.json`, JSON.stringify(miniSearch));
 
 })()

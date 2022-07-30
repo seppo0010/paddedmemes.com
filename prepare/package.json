@@ -12,6 +12,7 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "franc": "^6.0.0",
+    "minisearch": "^5.0.0",
     "tqdm": "^2.0.3"
   }
 }
