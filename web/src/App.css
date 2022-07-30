@@ -1,0 +1,48 @@
+header {
+  margin: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  align-items: center;
+}
+
+header label {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+header input {
+  margin: 0 4px;
+}
+
+header label #clear {
+  position: absolute;
+  border-radius: 50%;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  opacity: 0.3;
+  background: #ccc;
+}
+
+header label #clear:after{
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: inline-block;
+  line-height: 100%;
+  content: "\00d7";
+}
+
+header label #clear:hover,
+header label #clear:focus {
+  opacity: 1;
+}
+
+header button {
+  height: 30px;
+}
