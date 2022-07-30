@@ -34,10 +34,10 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
       const req = await fetch(url)
       const data = Buffer.from(await req.arrayBuffer());
 
-      await bucket.file(`photos/${file_unique_id}`).save(data);
+      const photo = `photos/${file_unique_id}`
+      await bucket.file(photo).save(data);
 
       const { text } = await getTextAndLanguage(data);
-      continue
       miniSearch.add({
         date_unixtime: update.message.date + '',
         photo,

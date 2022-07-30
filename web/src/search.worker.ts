@@ -34,9 +34,12 @@ export async function init () {
       })
       const jsonData = JSON.parse(data)
       const storedFields: Record<string, Meme> = jsonData.storedFields
+      const defaultResults = Object.values(storedFields)
+        .sort((a, b) => - parseInt(a.date_unixtime, 10) + parseInt(b.date_unixtime, 10))
+        .slice(0, 40)
       global.self.postMessage(['setReady', true])
-      global.self.postMessage(['setDefaultResults',
-        Object.values(storedFields).sort((a, b) => - parseInt(a.date_unixtime, 10) + parseInt(b.date_unixtime, 10)).slice(0, 40)])
+      global.self.postMessage(['setDefaultResults', defaultResults])
+
       doSearch()
     })
     // TODO: handle error
