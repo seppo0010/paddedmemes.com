@@ -31,10 +31,8 @@ for (const [i, photo] of tqdm(photos.entries(), { total: photos.length })) {
   }
   photo.text = null;
   photo.language = null;
-  const [eng, spa] = await Promise.all([
-    readImage(`${base_dir}/${photo.photo}`, 'eng'),
-    readImage(`${base_dir}/${photo.photo}`, 'spa'),
-  ]);
+  const eng = await readImage(`${base_dir}/${photo.photo}`, 'eng')
+  const spa = await readImage(`${base_dir}/${photo.photo}`, 'spa')
   try {
     const [[p0name, p0score], [p1name, p1score]] = francAll(eng, { only: ['eng', 'spa'] })
     const [[q0name, q0score], [q1name, q1score]] = francAll(spa, { only: ['eng', 'spa'] })
