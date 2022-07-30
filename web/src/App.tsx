@@ -42,6 +42,7 @@ function App() {
   const [searchCriteria, setSearchCriteria] = useState('')
   const [didSearch, setDidSearch] = useState(false)
   const [ready, setReady] = useState(false)
+  const [defaultResults, setDefaultResults] = useState<Meme[]>([]);
 
   useEffect(() => {
     if (workerInstance) return
@@ -57,6 +58,7 @@ function App() {
       case 'setSearchResults': setSearchResults(params); break
       case 'setDidSearch': setDidSearch(params); break
       case 'setReady': setReady(params); break
+      case 'setDefaultResults': setDefaultResults(params); break
       default: console.error('unexpected message type: ' + t); break
     }
   }
@@ -82,9 +84,8 @@ function App() {
     <div className="App" ref={ref}>
       <input type="text" value={searchCriteria} onChange={(e) => setSearchCriteria(e.target.value)} />
       {ready ? 'ready' : 'not ready'}
-      {didSearch ? 'did search' : 'no search'}
       <Masonry columns={4} spacing={2}>
-        {searchResults.map(({ height, width, photo, text }, i) => (
+        {(didSearch ? searchResults : defaultResults).map(({ height, width, photo, text }, i) => (
           <Paper key={i} sx={{ height: containerWidth * height / (4 * width) }}>
             <img src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={text} style={{ width: '100%' }} />
           </Paper>

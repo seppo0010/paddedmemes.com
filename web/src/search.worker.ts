@@ -1,4 +1,5 @@
 import MiniSearch, { SearchResult } from 'minisearch'
+import Meme from './Meme'
 
 let index: MiniSearch
 let criteria = ''
@@ -31,7 +32,11 @@ export async function init () {
           prefix: true
         }
       })
+      const jsonData = JSON.parse(data)
+      const storedFields: Record<string, Meme> = jsonData.storedFields
       global.self.postMessage(['setReady', true])
+      global.self.postMessage(['setDefaultResults',
+        Object.values(storedFields).sort((a, b) => - parseInt(a.date_unixtime, 10) + parseInt(b.date_unixtime, 10)).slice(0, 40)])
       doSearch()
     })
     // TODO: handle error
