@@ -69,7 +69,7 @@
     "workbox-webpack-plugin": "^6.4.1"
   },
   "scripts": {
-    "predeploy": "npm run build",
+    "predeploy": "npm run build && echo paddedmemes.com > ./build/CNAME",
     "deploy": "gh-pages -d build",
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
