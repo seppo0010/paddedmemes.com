@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import Meme from './Meme'
 import './App.css';
 
 // eslint-disable-next-line import/no-webpack-loader-syntax
 const Worker = require('workerize-loader!./search.worker')
 
-interface SearchResult {
-  date_unixtime: string;
-  photo: string;
-  width: number;
-  height: number;
-  text: string;
-}
-
 function App() {
   const [loading, setLoading] = useState(false)
   const [workerInstance, setWorkerInstance] = useState<any | null>(null)
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchResults, setSearchResults] = useState<Meme[]>([])
   const [searchCriteria, setSearchCriteria] = useState('')
   const [didSearch, setDidSearch] = useState(false)
 
