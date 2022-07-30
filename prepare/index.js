@@ -17,13 +17,13 @@ function readImage(path, language) {
   });
 }
 
-const base_dir = './data';
+const base_dir = process.env.PREPARE_PATH || './data';
 const { messages } = JSON.parse(fs.readFileSync(`${base_dir}/result.json`));
 const photos = messages
   .filter(({ photo }) => !!photo)
   .map(({ date_unixtime, photo, width, height }) => ({ date_unixtime, photo, width, height }));
 
-for (const [i, photo] of tqdm(photos.entries())) {
+for (const [i, photo] of tqdm(photos.entries(), { total: photos.length })) {
   const photoDataPath = `${base_dir}/${photo.photo}.json`;
   if (fs.existsSync(photoDataPath)) {
     photos[i] = JSON.parse(fs.readFileSync(photoDataPath));
