@@ -96,8 +96,8 @@ function App() {
         </label>
       </header>
       <Masonry columns={4} spacing={2}>
-        {(didSearch ? searchResults : defaultResults).map(({ height, width, photo, text }, i) => (
-          <Paper key={i} sx={{ height: containerWidth * height / (4 * width) }}>
+        {(didSearch ? searchResults : defaultResults).map(({ height, width, photo, text }) => (
+          <Paper key={photo} sx={{ height: containerWidth * height / (4 * width) }}>
             <img src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={text} style={{ width: '100%' }} />
           </Paper>
         ))}
