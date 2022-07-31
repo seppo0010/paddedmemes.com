@@ -24,6 +24,7 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
     const updates = await bot.getUpdates({ offset });
     if (updates.length === 0) break;
     for (const update of updates) {
+      console.log(`processsing update ${update.update_id}`);
       offset = update.update_id + 1;
       const photos = update && update.message && update.message.photo;
       if (!photos) continue;
@@ -38,6 +39,7 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
       await bucket.file(photo).save(data);
 
       const { text } = await getTextAndLanguage(data);
+      console.log('adding meme');
       miniSearch.add({
         date_unixtime: update.message.date + '',
         photo,
@@ -47,5 +49,9 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
       })
     }
   }
-  await bucket.file(`db.json`).save(JSON.stringify(miniSearch));
+  await bucket.file(`db.json`).save(JSON.stringify(miniSearch), {
+    metadata: {
+      cacheControl: 'no-cache',
+    }
+  });
 })();
