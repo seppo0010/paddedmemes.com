@@ -1,0 +1,16 @@
+on:
+  push:
+  schedule:
+    - cron: "0 */6 * * *"
+
+jobs:
+  new_memes:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+        docker run \
+          -e GCLOUD_STORAGE_BUCKET=$GCLOUD_STORAGE_BUCKET\
+          -e TELEGRAM_TOKEN=$TELEGRAM_TOKEN\
+          -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json\
+          seppo0010/paddedmemes.com-prepare\
+          bash -c "echo '$GOOGLE_APPLICATION_CREDENTIALS' >/tmp/credentials.json && node new.js"
