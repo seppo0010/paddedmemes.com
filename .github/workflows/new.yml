@@ -15,7 +15,7 @@ jobs:
             -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json\
             seppo0010/paddedmemes.com-prepare\
             bash -c "echo '$GOOGLE_APPLICATION_CREDENTIALS' >/tmp/credentials.json && node new.js"
-        with:
+        env:
           GCLOUD_STORAGE_BUCKET: ${{ secrets.GCLOUD_STORAGE_BUCKET }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
