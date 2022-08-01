@@ -24,9 +24,11 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
     const updates = await bot.getUpdates({ offset });
     if (updates.length === 0) break;
     for (const update of updates) {
-      console.log(`processsing update ${update.update_id}`);
+      console.log(`processsing update ${JSON.stringify(update)}`);
       offset = update.update_id + 1;
-      const photos = update && update.message && update.message.photo;
+      const message = update.message || update.channel_post;
+      if (!message) continue;
+      const photos = message.photo;
       if (!photos) continue;
       const { width, height, file_id, file_unique_id } = photos[photos.length-1];
       const file = await bot.getFile(file_id);
@@ -41,7 +43,7 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
       const { text } = await getTextAndLanguage(data);
       console.log('adding meme');
       miniSearch.add({
-        date_unixtime: update.message.date + '',
+        date_unixtime: message.date + '',
         photo,
         width,
         height,
