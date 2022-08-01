@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import Masonry from '@mui/lab/Masonry';
 import Paper from '@mui/material/Paper';
 import Meme from './Meme'
@@ -36,6 +38,9 @@ const useResize = (myRef: any) => {
 function App() {
   const ref = useRef<null | HTMLDivElement>(null);
   const containerWidth = useResize(ref).width;
+  const theme = useTheme();
+  const sm = !useMediaQuery(theme.breakpoints.up('sm'));
+  const md = !useMediaQuery(theme.breakpoints.up('md'));
   const [loading, setLoading] = useState(false)
   const [workerInstance, setWorkerInstance] = useState<any | null>(null)
   const [searchResults, setSearchResults] = useState<Meme[]>([])
@@ -80,6 +85,8 @@ function App() {
     workerInstance?.search(searchCriteria)
   }, [searchCriteria, workerInstance])
 
+  const columns = sm ? 1 : (md ? 2 : 4);
+
   return (
     <div className="App" ref={ref}>
       <header>
@@ -95,9 +102,9 @@ function App() {
           }} aria-label="Clear" id="clear" className={searchCriteria === '' ? 'hidden' : ''}></button>
         </label>
       </header>
-      <Masonry columns={4} spacing={2}>
+      <Masonry columns={columns} spacing={2}>
         {(didSearch ? searchResults : defaultResults).map(({ height, width, photo, text }) => (
-          <Paper key={photo} sx={{ height: containerWidth * height / (4 * width) }}>
+          <Paper key={photo} sx={{ height: containerWidth * height / (columns * width) }}>
             <img src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={text} style={{ width: '100%' }} />
           </Paper>
         ))}
