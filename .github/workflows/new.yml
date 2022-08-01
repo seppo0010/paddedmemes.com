@@ -6,10 +6,6 @@ on:
 jobs:
   new_memes:
     runs-on: ubuntu-latest
-    with:
-      GCLOUD_STORAGE_BUCKET: ${{ secrets.GCLOUD_STORAGE_BUCKET }}
-      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
     steps:
       - run: |
           docker run \
@@ -18,3 +14,7 @@ jobs:
             -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json\
             seppo0010/paddedmemes.com-prepare\
             bash -c "echo '$GOOGLE_APPLICATION_CREDENTIALS' >/tmp/credentials.json && node new.js"
+        with:
+          GCLOUD_STORAGE_BUCKET: ${{ secrets.GCLOUD_STORAGE_BUCKET }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
