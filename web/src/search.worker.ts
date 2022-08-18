@@ -1,3 +1,4 @@
+import uniqBy from 'lodash.uniqby';
 import MiniSearch, { SearchResult } from 'minisearch'
 import Meme from './Meme'
 
@@ -34,7 +35,7 @@ export async function init () {
       })
       const jsonData = JSON.parse(data)
       const storedFields: Record<string, Meme> = jsonData.storedFields
-      const defaultResults = Object.values(storedFields)
+      const defaultResults = uniqBy(Object.values(storedFields), (f) => f.photo)
         .sort((a, b) => - parseInt(a.date_unixtime, 10) + parseInt(b.date_unixtime, 10))
         .slice(0, 40)
       global.self.postMessage(['setReady', true])
