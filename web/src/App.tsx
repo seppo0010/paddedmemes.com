@@ -136,13 +136,15 @@ function App() {
         </label>
       </header>
       {!ready && <div className="loading"><div className="spinner" /><p>Cargando memes...</p></div>}
-      <Masonry columns={columns} spacing={2}>
-        {(didSearch ? searchResults : defaultResults).map(({ height, width, photo }) => (
-          <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
-            <MemeImage photo={photo} />
-          </div>
-        ))}
-      </Masonry>
+      {containerWidth > 0 && (
+        <Masonry columns={columns} spacing={2}>
+          {(didSearch ? searchResults : defaultResults).map(({ height, width, photo }) => (
+            <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
+              <MemeImage photo={photo} />
+            </div>
+          ))}
+        </Masonry>
+      )}
     </div>
   );
 }
