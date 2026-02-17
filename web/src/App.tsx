@@ -75,6 +75,7 @@ function App() {
     return params.get('q') || ''
   })
   const [didSearch, setDidSearch] = useState(false)
+  const [ready, setReady] = useState(false)
   const [defaultResults, setDefaultResults] = useState<Meme[]>([]);
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -91,7 +92,7 @@ function App() {
     switch (t) {
       case 'setSearchResults': setSearchResults(params); break
       case 'setDidSearch': setDidSearch(params); break
-      case 'setReady': ; break
+      case 'setReady': setReady(true); break
       case 'setDefaultResults': setDefaultResults(params); break
       default: console.error('unexpected message type: ' + t); break
     }
@@ -144,6 +145,7 @@ function App() {
           }} aria-label="Clear" id="clear" className={searchCriteria === '' ? 'hidden' : ''}></button>
         </label>
       </header>
+      {!ready && <div className="loading"><div className="spinner" /><p>Cargando memes...</p></div>}
       <Masonry columns={columns} spacing={2}>
         {(didSearch ? searchResults : defaultResults).map(({ height, width, photo }) => (
           <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
