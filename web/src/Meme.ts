@@ -3,5 +3,5 @@ export default interface Meme {
   photo: string;
   width: number;
   height: number;
-  text: string;
+  text?: string;
 }

@@ -6,6 +6,47 @@ let index: MiniSearch
 let descIndex: MiniSearch | null = null
 let criteria = ''
 
+const CACHE_NAME = 'paddedmemes-v1'
+const ASSETS_URL = process.env.REACT_APP_ASSETS_URL
+
+async function fetchWithCache(name: string, versionName: string): Promise<string> {
+  const cache = await caches.open(CACHE_NAME)
+  const versionUrl = `${ASSETS_URL}/${versionName}`
+  const dataUrl = `${ASSETS_URL}/${name}`
+
+  // Fetch the small version file (always fresh, no-cache)
+  const versionRes = await fetch(versionUrl)
+  const remoteVersion = versionRes.ok ? await versionRes.json() : null
+
+  // Try to load from cache
+  if (remoteVersion) {
+    const cachedVersion = await cache.match(versionUrl)
+    if (cachedVersion) {
+      const localVersion = await cachedVersion.json()
+      if (localVersion.hash === remoteVersion.hash) {
+        const cachedData = await cache.match(dataUrl)
+        if (cachedData) {
+          return cachedData.text()
+        }
+      }
+    }
+  }
+
+  // Cache miss or version mismatch — fetch fresh data
+  const dataRes = await fetch(dataUrl)
+  const ds = new (globalThis as any).DecompressionStream('gzip')
+  const decompressed = dataRes.body!.pipeThrough(ds)
+  const text = await new Response(decompressed).text()
+
+  // Store both in cache
+  await cache.put(dataUrl, new Response(text))
+  if (remoteVersion) {
+    await cache.put(versionUrl, new Response(JSON.stringify(remoteVersion)))
+  }
+
+  return text
+}
+
 const doSearch = () => {
   if (!index) return
   const c = criteria.split(' ').filter((x) => x.length >= 3).join(' ')
@@ -45,12 +86,8 @@ function getStoredFields(photo: string): Partial<Meme> {
 }
 
 export async function init () {
-  const dbPromise = fetch(`${process.env.REACT_APP_ASSETS_URL}/db.json`).then((res) => res.text())
-  const descPromise = fetch(`${process.env.REACT_APP_ASSETS_URL}/descriptions.json`)
-    .then((res) => {
-      if (!res.ok) return null
-      return res.text()
-    })
+  const dbPromise = fetchWithCache('db.json', 'db.version.json')
+  const descPromise = fetchWithCache('descriptions.json', 'descriptions.version.json')
     .catch(() => null)
 
   const [data, descData] = await Promise.all([dbPromise, descPromise])
@@ -59,7 +96,7 @@ export async function init () {
   index = MiniSearch.loadJSON(data, {
     idField: 'photo',
     fields: ['text'],
-    storeFields: ['date_unixtime', 'photo', 'width', 'height', 'text'],
+    storeFields: ['date_unixtime', 'photo', 'width', 'height'],
     searchOptions: {
       combineWith: 'AND',
       prefix: true
@@ -70,7 +107,7 @@ export async function init () {
   const storedFields: Record<string, Meme> = jsonData.storedFields
   // Build lookup for merging description-only results with meme metadata
   storedFieldsMap = {}
-  for (const [key, doc] of Object.entries(storedFields)) {
+  for (const [, doc] of Object.entries(storedFields)) {
     storedFieldsMap[doc.photo] = doc
   }
 

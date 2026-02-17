@@ -1,5 +1,6 @@
 import * as fs from 'fs';
-import util from 'node:util';
+import { gzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import tqdm from 'tqdm';
 import MiniSearch from 'minisearch'
 import { getTextAndLanguage } from './text.js'
@@ -22,14 +23,19 @@ for (const [i, photo] of tqdm(photos.entries(), { total: photos.length })) {
   photo.text = text;
   photo.language = language;
   fs.writeFileSync(photoDataPath, JSON.stringify(photo));
+  fs.writeFileSync(`${base_dir}/${photo.photo}.txt`, text);
 }
 
 const miniSearch = new MiniSearch({
   idField: 'photo',
   fields: ['text'],
-  storeFields: ['date_unixtime', 'photo', 'width', 'height', 'text'],
+  storeFields: ['date_unixtime', 'photo', 'width', 'height'],
 })
 miniSearch.addAll(photos);
-fs.writeFileSync(`${base_dir}/db.json`, JSON.stringify(miniSearch));
+const jsonStr = JSON.stringify(miniSearch);
+fs.writeFileSync(`${base_dir}/db.json`, gzipSync(jsonStr));
+
+const hash = createHash('md5').update(jsonStr).digest('hex');
+fs.writeFileSync(`${base_dir}/db.version.json`, JSON.stringify({ hash, updatedAt: Date.now() }));
 
 })()

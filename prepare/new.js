@@ -1,3 +1,5 @@
+import { gzipSync, gunzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import fetch from 'node-fetch';
 import TelegramBot from 'node-telegram-bot-api';
 import MiniSearch from 'minisearch'
@@ -12,11 +14,12 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
 
 
 (async () => {
-  const db = await bucket.file(`db.json`).download()
-  const miniSearch = MiniSearch.loadJSON(db[0], {
+  const [dbCompressed] = await bucket.file(`db.json`).download()
+  const db = gunzipSync(dbCompressed)
+  const miniSearch = MiniSearch.loadJSON(db.toString(), {
     idField: 'photo',
     fields: ['text'],
-    storeFields: ['date_unixtime', 'photo', 'width', 'height', 'text'],
+    storeFields: ['date_unixtime', 'photo', 'width', 'height'],
   });
 
   let offset;
@@ -41,6 +44,12 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
       await bucket.file(photo).save(data);
 
       const { text } = await getTextAndLanguage(data);
+      await bucket.file(`${photo}.txt`).save(text, {
+        metadata: {
+          cacheControl: 'public, max-age=31536000, immutable',
+          contentType: 'text/plain; charset=utf-8',
+        }
+      });
       console.log('adding meme');
       miniSearch.add({
         date_unixtime: message.date + '',
@@ -51,9 +60,20 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
       })
     }
   }
-  await bucket.file(`db.json`).save(JSON.stringify(miniSearch), {
+  const jsonStr = JSON.stringify(miniSearch);
+  const compressed = gzipSync(jsonStr);
+  await bucket.file(`db.json`).save(compressed, {
     metadata: {
       cacheControl: 'no-cache',
+      contentType: 'application/json',
+    }
+  });
+
+  const hash = createHash('md5').update(jsonStr).digest('hex');
+  await bucket.file('db.version.json').save(JSON.stringify({ hash, updatedAt: Date.now() }), {
+    metadata: {
+      cacheControl: 'no-cache',
+      contentType: 'application/json',
     }
   });
 })();

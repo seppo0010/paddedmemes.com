@@ -58,7 +58,6 @@ async function uploadDescriptions(miniSearch) {
   await bucket.file('descriptions.json').save(compressed, {
     metadata: {
       cacheControl: 'no-cache',
-      contentEncoding: 'gzip',
       contentType: 'application/json',
     },
   });

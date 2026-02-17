@@ -34,6 +34,33 @@ const useResize = (myRef: any) => {
   return { width, height }
 }
 
+function MemeImage({ photo }: { photo: string }) {
+  const [alt, setAlt] = useState('');
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          fetch(`${process.env.REACT_APP_ASSETS_URL}/${photo}.txt`)
+            .then((res) => res.ok ? res.text() : '')
+            .then(setAlt)
+            .catch(() => {});
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(img);
+    return () => observer.disconnect();
+  }, [photo]);
+
+  return <img ref={imgRef} src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={alt} />;
+}
+
 function App() {
   const ref = useRef<null | HTMLDivElement>(null);
   const containerWidth = useResize(ref).width;
@@ -105,9 +132,9 @@ function App() {
         </label>
       </header>
       <Masonry columns={columns} spacing={2}>
-        {(didSearch ? searchResults : defaultResults).map(({ height, width, photo, text }) => (
+        {(didSearch ? searchResults : defaultResults).map(({ height, width, photo }) => (
           <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
-            <img src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={text} />
+            <MemeImage photo={photo} />
           </div>
         ))}
       </Masonry>
