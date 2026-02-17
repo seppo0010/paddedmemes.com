@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Masonry from '@mui/lab/Masonry';
@@ -8,30 +8,20 @@ import './App.css';
 // eslint-disable-next-line import/no-webpack-loader-syntax
 const Worker = require('workerize-loader!./search.worker')
 
-const useResize = (myRef: any) => {
+const useContainerWidth = (ref: React.RefObject<HTMLElement | null>) => {
   const [width, setWidth] = useState(0)
-  const [height, setHeight] = useState(0)
-
-  const handleResize = useCallback(() => {
-    setWidth(myRef?.current?.offsetWidth)
-    setHeight(myRef?.current?.offsetHeight)
-  }, [myRef])
 
   useEffect(() => {
-    handleResize();
-  }, [myRef, handleResize])
+    const el = ref.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => {
+      setWidth(entry.contentRect.width)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref])
 
-  useEffect(() => {
-    window.addEventListener('load', handleResize)
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('load', handleResize)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [myRef, handleResize])
-
-  return { width, height }
+  return width
 }
 
 function MemeImage({ photo }: { photo: string }) {
@@ -63,7 +53,7 @@ function MemeImage({ photo }: { photo: string }) {
 
 function App() {
   const ref = useRef<null | HTMLDivElement>(null);
-  const containerWidth = useResize(ref).width;
+  const containerWidth = useContainerWidth(ref);
   const theme = useTheme();
   const sm = !useMediaQuery(theme.breakpoints.up('sm'));
   const md = !useMediaQuery(theme.breakpoints.up('md'));
