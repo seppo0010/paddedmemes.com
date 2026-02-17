@@ -70,7 +70,10 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [workerInstance, setWorkerInstance] = useState<any | null>(null)
   const [searchResults, setSearchResults] = useState<Meme[]>([])
-  const [searchCriteria, setSearchCriteria] = useState('')
+  const [searchCriteria, setSearchCriteria] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('q') || ''
+  })
   const [didSearch, setDidSearch] = useState(false)
   const [defaultResults, setDefaultResults] = useState<Meme[]>([]);
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -110,6 +113,16 @@ function App() {
   useEffect(() => {
     workerInstance?.search(searchCriteria)
   }, [searchCriteria, workerInstance])
+
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (searchCriteria) {
+      url.searchParams.set('q', searchCriteria)
+    } else {
+      url.searchParams.delete('q')
+    }
+    window.history.replaceState(null, '', url)
+  }, [searchCriteria])
 
   const columns = sm ? 1 : (md ? 2 : 4);
 
