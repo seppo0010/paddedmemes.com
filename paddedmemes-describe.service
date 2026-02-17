@@ -1,0 +1,12 @@
+[Unit]
+Description=PaddedMemes Describe Batch Service
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/seppo/Documents/paddedmemes.com/prepare
+EnvironmentFile=/home/seppo/Documents/paddedmemes.com/prepare/.env
+ExecStart=/usr/local/bin/node describe.js
+
+[Install]
+WantedBy=default.target
