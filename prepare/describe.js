@@ -1,3 +1,5 @@
+import { gzipSync, gunzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import fetch from 'node-fetch';
 import MiniSearch from 'minisearch'
 import { Storage } from '@google-cloud/storage';
@@ -29,13 +31,21 @@ async function describeImage(imageBuffer, prompt) {
   });
   if (!res.ok) throw new Error(`Ollama error: ${res.status} ${await res.text()}`);
   const data = await res.json();
-  return data.response.trim();
+  let text = data.response.trim();
+  // Strip markdown bold markers
+  text = text.replace(/\*\*/g, '');
+  // Remove common LLM preamble lines
+  text = text.replace(/^(?:here(?:'s| is)[^\n]*:\s*\n*)/i, '');
+  // Remove trailing follow-up questions
+  text = text.replace(/\n+(?:would you|let me|do you|shall i|if you|feel free|i can also)[^\n]*$/i, '');
+  return text.trim();
 }
 
 async function loadDescriptionsIndex() {
   try {
     const [data] = await bucket.file('descriptions.json').download();
-    return MiniSearch.loadJSON(data.toString(), descriptionsConfig);
+    const decompressed = gunzipSync(data);
+    return MiniSearch.loadJSON(decompressed.toString(), descriptionsConfig);
   } catch (e) {
     if (e.code === 404) return new MiniSearch(descriptionsConfig);
     throw e;
@@ -43,8 +53,22 @@ async function loadDescriptionsIndex() {
 }
 
 async function uploadDescriptions(miniSearch) {
-  await bucket.file('descriptions.json').save(JSON.stringify(miniSearch), {
-    metadata: { cacheControl: 'no-cache' },
+  const jsonStr = JSON.stringify(miniSearch);
+  const compressed = gzipSync(jsonStr);
+  await bucket.file('descriptions.json').save(compressed, {
+    metadata: {
+      cacheControl: 'no-cache',
+      contentEncoding: 'gzip',
+      contentType: 'application/json',
+    },
+  });
+
+  const hash = createHash('md5').update(jsonStr).digest('hex');
+  await bucket.file('descriptions.version.json').save(JSON.stringify({ hash, updatedAt: Date.now() }), {
+    metadata: {
+      cacheControl: 'no-cache',
+      contentType: 'application/json',
+    },
   });
 }
 
@@ -52,8 +76,8 @@ async function uploadDescriptions(miniSearch) {
   console.log(`Using model: ${MODEL}, batch size: ${BATCH_SIZE}`);
 
   // Load main db to get all photo IDs
-  const [dbData] = await bucket.file('db.json').download();
-  const dbJson = JSON.parse(dbData.toString());
+  const [dbDataCompressed] = await bucket.file('db.json').download();
+  const dbJson = JSON.parse(gunzipSync(dbDataCompressed).toString());
   const allPhotos = Object.values(dbJson.storedFields).map((doc) => doc.photo);
   console.log(`Total memes in db: ${allPhotos.length}`);
 
@@ -84,8 +108,8 @@ async function uploadDescriptions(miniSearch) {
       try {
         const [imageData] = await bucket.file(photo).download();
         const [descEn, descEs] = await Promise.all([
-          describeImage(imageData, 'Describe this meme image in one sentence for search indexing.'),
-          describeImage(imageData, 'Describí esta imagen de meme en una oración para indexación de búsqueda.'),
+          describeImage(imageData, 'Describe this meme image in one sentence for search indexing. Reply with ONLY the sentence, no preamble, no formatting, no follow-up.'),
+          describeImage(imageData, 'Describí esta imagen de meme en una oración para indexación de búsqueda. Respondé SOLO con la oración, sin preámbulo, sin formato, sin seguimiento.'),
         ]);
         descIndex.add({
           photo,
