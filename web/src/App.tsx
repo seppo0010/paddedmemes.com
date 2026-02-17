@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Masonry from '@mui/lab/Masonry';
-import Paper from '@mui/material/Paper';
 import Meme from './Meme'
 import './App.css';
 
@@ -91,8 +90,11 @@ function App() {
     <div className="App" ref={ref}>
       <header>
         <label>
-          <span>Buscar</span>
-          <input autoFocus={true} type="text" placeholder={"boquita"} value={searchCriteria} ref={searchInputRef} onChange={(event) => {
+          <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input autoFocus={true} type="text" placeholder={"Buscar memes..."} value={searchCriteria} ref={searchInputRef} onChange={(event) => {
             const value = event.target.value
             setSearchCriteria(value)
           }} />
@@ -104,9 +106,9 @@ function App() {
       </header>
       <Masonry columns={columns} spacing={2}>
         {(didSearch ? searchResults : defaultResults).map(({ height, width, photo, text }) => (
-          <Paper key={photo} sx={{ height: containerWidth * height / (columns * width) }}>
-            <img src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={text} style={{ width: '100%' }} />
-          </Paper>
+          <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
+            <img src={`${process.env.REACT_APP_ASSETS_URL}/${photo}`} alt={text} />
+          </div>
         ))}
       </Masonry>
     </div>

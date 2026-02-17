@@ -1,48 +1,105 @@
+.App {
+  min-height: 100vh;
+}
+
 header {
-  margin: 20px;
   display: flex;
-  flex-wrap: wrap;
+  justify-content: center;
+  padding: 24px 16px 16px;
   width: 100%;
-  align-items: center;
 }
 
 header label {
   display: flex;
   align-items: center;
   position: relative;
+  width: 100%;
+  max-width: 560px;
+}
+
+header .search-icon {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: #888;
+  pointer-events: none;
 }
 
 header input {
-  margin: 0 4px;
+  width: 100%;
+  padding: 12px 40px 12px 44px;
+  font-size: 16px;
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+header input::placeholder {
+  color: #666;
+}
+
+header input:focus {
+  border-color: #555;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
 header label #clear {
   position: absolute;
-  border-radius: 50%;
   right: 10px;
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  opacity: 0.3;
-  background: #ccc;
+  border: none;
+  border-radius: 50%;
+  background: #444;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s, background 0.15s;
 }
 
-header label #clear:after{
+header label #clear:after {
   position: absolute;
   left: 0;
   top: 0;
   right: 0;
   bottom: 0;
   display: inline-block;
-  line-height: 100%;
+  line-height: 22px;
   content: "\00d7";
 }
 
 header label #clear:hover,
 header label #clear:focus {
   opacity: 1;
+  background: #555;
 }
 
-header button {
-  height: 30px;
+.meme-card {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1e1e1e;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.meme-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.meme-card img {
+  display: block;
+  width: 100%;
+}
+
+.hidden {
+  display: none;
 }
