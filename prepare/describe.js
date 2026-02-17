@@ -101,31 +101,29 @@ async function uploadDescriptions(miniSearch) {
   }
 
   let processed = 0;
-  for (let i = 0; i < todo.length; i += BATCH_SIZE) {
-    const batch = todo.slice(i, i + BATCH_SIZE);
-    for (const photo of batch) {
-      try {
-        const [imageData] = await bucket.file(photo).download();
-        const [descEn, descEs] = await Promise.all([
-          describeImage(imageData, 'Describe this meme image in one sentence for search indexing. Reply with ONLY the sentence, no preamble, no formatting, no follow-up.'),
-          describeImage(imageData, 'Describí esta imagen de meme en una oración para indexación de búsqueda. Respondé SOLO con la oración, sin preámbulo, sin formato, sin seguimiento.'),
-        ]);
-        descIndex.add({
-          photo,
-          description: `${descEn} ${descEs}`,
-          description_en: descEn,
-          description_es: descEs,
-        });
-        processed++;
-        console.log(`[${described.size + processed}/${allPhotos.length}] ${photo}: ${descEn}`);
-      } catch (e) {
-        console.error(`Error processing ${photo}: ${e.message}`);
-      }
+  const batch = todo.slice(0, BATCH_SIZE);
+  for (const photo of batch) {
+    try {
+      const [imageData] = await bucket.file(photo).download();
+      const [descEn, descEs] = await Promise.all([
+        describeImage(imageData, 'Describe this meme image in one sentence for search indexing. Reply with ONLY the sentence, no preamble, no formatting, no follow-up.'),
+        describeImage(imageData, 'Describí esta imagen de meme en una oración para indexación de búsqueda. Respondé SOLO con la oración, sin preámbulo, sin formato, sin seguimiento.'),
+      ]);
+      descIndex.add({
+        photo,
+        description: `${descEn} ${descEs}`,
+        description_en: descEn,
+        description_es: descEs,
+      });
+      processed++;
+      console.log(`[${described.size + processed}/${allPhotos.length}] ${photo}: ${descEn}`);
+    } catch (e) {
+      console.error(`Error processing ${photo}: ${e.message}`);
     }
-    // Upload after each batch
-    await uploadDescriptions(descIndex);
-    console.log(`Batch uploaded. Progress: ${described.size + processed}/${allPhotos.length}`);
   }
+  // Upload after the batch
+  await uploadDescriptions(descIndex);
+  console.log(`Batch uploaded. Progress: ${described.size + processed}/${allPhotos.length}`);
 
   console.log(`Done. Described ${processed} new memes.`);
 })();
