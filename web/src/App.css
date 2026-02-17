@@ -126,6 +126,33 @@ header label #clear:focus {
   to { transform: rotate(360deg); }
 }
 
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 10px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.suggestions li {
+  padding: 10px 16px;
+  color: #e0e0e0;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.suggestions li:hover,
+.suggestions li.active {
+  background: #2a2a2a;
+}
+
 .hidden {
   display: none;
 }

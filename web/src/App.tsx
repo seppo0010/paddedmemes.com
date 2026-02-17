@@ -67,6 +67,9 @@ function App() {
   const [didSearch, setDidSearch] = useState(false)
   const [ready, setReady] = useState(false)
   const [defaultResults, setDefaultResults] = useState<Meme[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -84,6 +87,7 @@ function App() {
       case 'setDidSearch': setDidSearch(params); break
       case 'setReady': setReady(true); break
       case 'setDefaultResults': setDefaultResults(params); break
+      case 'setSuggestions': setSuggestions(params); break
       default: console.error('unexpected message type: ' + t); break
     }
   }
@@ -103,6 +107,7 @@ function App() {
 
   useEffect(() => {
     workerInstance?.search(searchCriteria)
+    workerInstance?.autoSuggest(searchCriteria)
   }, [searchCriteria, workerInstance])
 
   useEffect(() => {
@@ -125,14 +130,53 @@ function App() {
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input autoFocus={true} type="text" placeholder={"Buscar memes..."} value={searchCriteria} ref={searchInputRef} onChange={(event) => {
-            const value = event.target.value
-            setSearchCriteria(value)
-          }} />
+          <input autoFocus={true} type="text" placeholder={"Buscar memes..."} value={searchCriteria} ref={searchInputRef}
+            autoComplete="off"
+            onChange={(event) => {
+              const value = event.target.value
+              setSearchCriteria(value)
+              setShowSuggestions(true)
+              setActiveIndex(-1)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            onKeyDown={(e) => {
+              if (!showSuggestions || suggestions.length === 0) return
+              if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setActiveIndex(i => i < suggestions.length - 1 ? i + 1 : 0)
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setActiveIndex(i => i > 0 ? i - 1 : suggestions.length - 1)
+              } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault()
+                setSearchCriteria(suggestions[activeIndex])
+                setShowSuggestions(false)
+                setActiveIndex(-1)
+              } else if (e.key === 'Escape') {
+                setShowSuggestions(false)
+                setActiveIndex(-1)
+              }
+            }}
+          />
           <button onClick={() => {
             setSearchCriteria('')
             searchInputRef.current?.focus()
           }} aria-label="Clear" id="clear" className={searchCriteria === '' ? 'hidden' : ''}></button>
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="suggestions">
+              {suggestions.map((s, i) => (
+                <li key={s} className={i === activeIndex ? 'active' : ''}
+                  onMouseDown={() => {
+                    setSearchCriteria(s)
+                    setShowSuggestions(false)
+                    setActiveIndex(-1)
+                  }}
+                  onMouseEnter={() => setActiveIndex(i)}
+                >{s}</li>
+              ))}
+            </ul>
+          )}
         </label>
       </header>
       {!ready && <div className="loading"><div className="spinner" /><p>Cargando memes...</p></div>}

@@ -136,3 +136,24 @@ export async function search (searchCriteria: string) {
   criteria = searchCriteria
   doSearch()
 }
+
+export async function autoSuggest (query: string) {
+  if (!index || query.trim().length < 2) {
+    global.self.postMessage(['setSuggestions', []])
+    return
+  }
+  const opts = { combineWith: 'AND' as const, prefix: true }
+  const textSuggestions = index.autoSuggest(query, opts)
+  let allSuggestions = textSuggestions
+  if (descIndex) {
+    const descSuggestions = descIndex.autoSuggest(query, opts)
+    const seen = new Set(textSuggestions.map(s => s.suggestion))
+    for (const s of descSuggestions) {
+      if (!seen.has(s.suggestion)) {
+        allSuggestions.push(s)
+      }
+    }
+    allSuggestions.sort((a, b) => b.score - a.score)
+  }
+  global.self.postMessage(['setSuggestions', allSuggestions.slice(0, 5).map(s => s.suggestion)])
+}
