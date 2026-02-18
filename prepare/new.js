@@ -12,15 +12,41 @@ const bot = new TelegramBot(token);
 const storage = new Storage();
 const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
 
+function extractReactions(reactionsSource) {
+  const reactions = reactionsSource?.results || reactionsSource?.reactions;
+  if (!Array.isArray(reactions)) return [];
+
+  return reactions
+    .map((reaction) => {
+      const emoji = reaction?.type?.emoji || reaction?.emoji;
+      const count = Number(reaction?.total_count ?? reaction?.count ?? 0);
+      if (!emoji || count <= 0) return null;
+      return { emoji, count };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.count - a.count);
+}
+
+function getMessageKey(chatId, messageId) {
+  return `${chatId}:${messageId}`;
+}
 
 (async () => {
   const [dbCompressed] = await bucket.file(`db.json`).download()
   const db = gunzipSync(dbCompressed)
+  const dbJSON = JSON.parse(db.toString())
   const miniSearch = MiniSearch.loadJSON(db.toString(), {
     idField: 'photo',
     fields: ['text'],
-    storeFields: ['date_unixtime', 'photo', 'width', 'height'],
+    storeFields: ['date_unixtime', 'photo', 'width', 'height', 'chat_id', 'message_id', 'reactions'],
   });
+  const messageToPhoto = new Map();
+  const reactionOverrides = new Map();
+
+  for (const doc of Object.values(dbJSON.storedFields || {})) {
+    if (!doc?.chat_id || !doc?.message_id || !doc?.photo) continue;
+    messageToPhoto.set(getMessageKey(doc.chat_id, doc.message_id), doc.photo);
+  }
 
   let offset;
   while (true) {
@@ -29,11 +55,26 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
     for (const update of updates) {
       console.log(`processsing update ${JSON.stringify(update)}`);
       offset = update.update_id + 1;
+
+      const reactionUpdate = update.message_reaction_count;
+      if (reactionUpdate) {
+        const chatId = String(reactionUpdate.chat?.id || '');
+        const messageId = String(reactionUpdate.message_id || '');
+        const photo = messageToPhoto.get(getMessageKey(chatId, messageId));
+        if (photo) {
+          reactionOverrides.set(photo, extractReactions(reactionUpdate));
+          console.log(`updated reactions for ${chatId}/${messageId}`);
+        }
+        continue;
+      }
+
       const message = update.message || update.channel_post;
       if (!message) continue;
       const photos = message.photo;
       if (!photos) continue;
       const { width, height, file_id, file_unique_id } = photos[photos.length-1];
+      const chatId = String(message.chat?.id || '');
+      const messageId = String(message.message_id || '');
       const file = await bot.getFile(file_id);
       if (!file.file_path) continue;
       const url = `https://api.telegram.org/file/bot${token}/${file.file_path}`
@@ -56,11 +97,27 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
         photo,
         width,
         height,
+        chat_id: chatId,
+        message_id: messageId,
+        reactions: extractReactions(message.reactions),
         text
       })
+      if (chatId && messageId) {
+        messageToPhoto.set(getMessageKey(chatId, messageId), photo);
+      }
     }
   }
-  const jsonStr = JSON.stringify(miniSearch);
+  const json = miniSearch.toJSON();
+  if (reactionOverrides.size > 0) {
+    for (const doc of Object.values(json.storedFields || {})) {
+      if (!doc?.photo) continue;
+      const reactions = reactionOverrides.get(doc.photo);
+      if (reactions) {
+        doc.reactions = reactions;
+      }
+    }
+  }
+  const jsonStr = JSON.stringify(json);
   const compressed = gzipSync(jsonStr);
   await bucket.file(`db.json`).save(compressed, {
     metadata: {

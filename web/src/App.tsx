@@ -121,6 +121,7 @@ function App() {
   }, [searchCriteria])
 
   const columns = sm ? 1 : (md ? 2 : 4);
+  const memesToShow = didSearch ? searchResults : defaultResults
 
   return (
     <div className="App" ref={ref}>
@@ -182,9 +183,19 @@ function App() {
       {!ready && <div className="loading"><div className="spinner" /><p>Cargando memes...</p></div>}
       {containerWidth > 0 && (
         <Masonry columns={columns} spacing={2}>
-          {(didSearch ? searchResults : defaultResults).map(({ height, width, photo }) => (
+          {memesToShow.map(({ height, width, photo, reactions }) => (
             <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
               <MemeImage photo={photo} />
+              {reactions && reactions.length > 0 && (
+                <div className="reactions" aria-label="Reactions">
+                  {reactions.map(({ emoji, count }) => (
+                    <span key={emoji} className="reaction-pill">
+                      <span>{emoji}</span>
+                      <span>{count}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </Masonry>

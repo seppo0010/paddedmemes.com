@@ -96,7 +96,7 @@ export async function init () {
   index = MiniSearch.loadJSON(data, {
     idField: 'photo',
     fields: ['text'],
-    storeFields: ['date_unixtime', 'photo', 'width', 'height'],
+    storeFields: ['date_unixtime', 'photo', 'width', 'height', 'reactions'],
     searchOptions: {
       combineWith: 'AND',
       prefix: true

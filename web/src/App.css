@@ -83,6 +83,7 @@ header label #clear:focus {
 }
 
 .meme-card {
+  position: relative;
   border-radius: 10px;
   overflow: hidden;
   background: #1e1e1e;
@@ -98,6 +99,28 @@ header label #clear:focus {
 .meme-card img {
   display: block;
   width: 100%;
+}
+
+.reactions {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #f4f4f4;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .loading {
