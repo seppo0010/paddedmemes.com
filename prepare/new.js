@@ -34,23 +34,19 @@ function getMessageKey(chatId, messageId) {
 (async () => {
   const [dbCompressed] = await bucket.file(`db.json`).download()
   const db = gunzipSync(dbCompressed)
-  const dbJSON = JSON.parse(db.toString())
   const miniSearch = MiniSearch.loadJSON(db.toString(), {
     idField: 'photo',
     fields: ['text'],
     storeFields: ['date_unixtime', 'photo', 'width', 'height', 'chat_id', 'message_id', 'reactions'],
   });
-  const messageToPhoto = new Map();
-  const reactionOverrides = new Map();
-
-  for (const doc of Object.values(dbJSON.storedFields || {})) {
-    if (!doc?.chat_id || !doc?.message_id || !doc?.photo) continue;
-    messageToPhoto.set(getMessageKey(doc.chat_id, doc.message_id), doc.photo);
-  }
+  const reactionOverridesByKey = new Map();
 
   let offset;
   while (true) {
-    const updates = await bot.getUpdates({ offset });
+    const updates = await bot.getUpdates({
+      offset,
+      allowed_updates: ['message', 'channel_post', 'message_reaction_count'],
+    });
     if (updates.length === 0) break;
     for (const update of updates) {
       console.log(`processsing update ${JSON.stringify(update)}`);
@@ -60,9 +56,9 @@ function getMessageKey(chatId, messageId) {
       if (reactionUpdate) {
         const chatId = String(reactionUpdate.chat?.id || '');
         const messageId = String(reactionUpdate.message_id || '');
-        const photo = messageToPhoto.get(getMessageKey(chatId, messageId));
-        if (photo) {
-          reactionOverrides.set(photo, extractReactions(reactionUpdate));
+        const key = getMessageKey(chatId, messageId);
+        if (chatId && messageId) {
+          reactionOverridesByKey.set(key, extractReactions(reactionUpdate));
           console.log(`updated reactions for ${chatId}/${messageId}`);
         }
         continue;
@@ -99,19 +95,17 @@ function getMessageKey(chatId, messageId) {
         height,
         chat_id: chatId,
         message_id: messageId,
-        reactions: extractReactions(message.reactions),
+        reactions: extractReactions(message.reactions || message.reaction_count),
         text
       })
-      if (chatId && messageId) {
-        messageToPhoto.set(getMessageKey(chatId, messageId), photo);
-      }
     }
   }
   const json = miniSearch.toJSON();
-  if (reactionOverrides.size > 0) {
+  if (reactionOverridesByKey.size > 0) {
     for (const doc of Object.values(json.storedFields || {})) {
-      if (!doc?.photo) continue;
-      const reactions = reactionOverrides.get(doc.photo);
+      if (!doc?.chat_id || !doc?.message_id) continue;
+      const key = getMessageKey(doc.chat_id, doc.message_id);
+      const reactions = reactionOverridesByKey.get(key);
       if (reactions) {
         doc.reactions = reactions;
       }
