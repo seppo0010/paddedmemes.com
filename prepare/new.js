@@ -45,7 +45,7 @@ function getMessageKey(chatId, messageId) {
   while (true) {
     const updates = await bot.getUpdates({
       offset,
-      allowed_updates: ['message', 'channel_post', 'message_reaction_count'],
+      allowed_updates: JSON.stringify(['message', 'channel_post', 'message_reaction_count']),
     });
     if (updates.length === 0) break;
     for (const update of updates) {
