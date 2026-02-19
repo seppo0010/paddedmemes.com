@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Masonry from '@mui/lab/Masonry';
@@ -71,6 +71,7 @@ function App() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const workerRpcIdRef = useRef(0)
 
   useEffect(() => {
     if (workerInstance) return
@@ -96,19 +97,35 @@ function App() {
     if (!workerInstance) return
     workerInstance.addEventListener('message', processMessage)
     return () => workerInstance.removeEventListener('message', processMessage)
-  })
+  }, [workerInstance])
+
+  const invokeWorker = useCallback((method: 'init' | 'search' | 'autoSuggest', ...params: any[]) => {
+    if (!workerInstance) return
+    if (typeof workerInstance[method] === 'function') {
+      workerInstance[method](...params)
+      return
+    }
+    // Fallback for dev/HMR cases where workerize proxies are missing.
+    workerRpcIdRef.current += 1
+    workerInstance.postMessage({
+      type: 'RPC',
+      id: workerRpcIdRef.current,
+      method,
+      params
+    })
+  }, [workerInstance])
 
   useEffect(() => {
     if (loading || !workerInstance) return
     setLoading(true)
 
-    workerInstance.init()
-  }, [loading, workerInstance])
+    invokeWorker('init')
+  }, [loading, workerInstance, invokeWorker])
 
   useEffect(() => {
-    workerInstance?.search(searchCriteria)
-    workerInstance?.autoSuggest(searchCriteria)
-  }, [searchCriteria, workerInstance])
+    invokeWorker('search', searchCriteria)
+    invokeWorker('autoSuggest', searchCriteria)
+  }, [searchCriteria, workerInstance, invokeWorker])
 
   useEffect(() => {
     const url = new URL(window.location.href)
@@ -122,6 +139,26 @@ function App() {
 
   const columns = sm ? 1 : (md ? 2 : 4);
   const memesToShow = didSearch ? searchResults : defaultResults
+
+  const [loadingMessage, setLoadingMessage] = useState('Cargando memes...')
+
+  useEffect(() => {
+    if (ready) return
+    const messages = [
+      'Buscando la gracia...',
+      'Entrenando a las neuronas...',
+      'Inyectando humor...',
+      'Calculando el nivel de "xd"...',
+      'Esperá un toque...',
+      'Preparando los momazos...',
+      'Desempolvando el teclado...',
+      'Buscando el meme perfecto...'
+    ]
+    const interval = setInterval(() => {
+      setLoadingMessage(messages[Math.floor(Math.random() * messages.length)])
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [ready])
 
   return (
     <div className="App" ref={ref}>
@@ -180,7 +217,12 @@ function App() {
           )}
         </label>
       </header>
-      {!ready && <div className="loading"><div className="spinner" /><p>Cargando memes...</p></div>}
+      {!ready && (
+        <div className="loading">
+          <div className="spinner" />
+          <p>{loadingMessage}</p>
+        </div>
+      )}
       {containerWidth > 0 && (
         <Masonry columns={columns} spacing={2}>
           {memesToShow.map(({ height, width, photo, reactions }) => (
