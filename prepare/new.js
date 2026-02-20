@@ -134,7 +134,8 @@ function getUpdateMessage(update) {
 
       console.log('adding meme');
       if (existingDoc) {
-        miniSearch.replace(doc);
+        miniSearch.remove(existingDoc);
+        miniSearch.add(doc);
       } else {
         miniSearch.add(doc);
       }
