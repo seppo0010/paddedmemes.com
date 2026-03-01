@@ -10,4 +10,6 @@ export default interface Meme {
   height: number;
   reactions?: MemeReaction[];
   text?: string;
+  chat_id?: string;
+  message_id?: string;
 }

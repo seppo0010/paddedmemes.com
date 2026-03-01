@@ -96,6 +96,12 @@ header label #clear:focus {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+.meme-card a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .meme-card img {
   display: block;
   width: 100%;

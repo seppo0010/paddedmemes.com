@@ -56,14 +56,14 @@ const doSearch = () => {
     return
   }
   const textResults = index.search(criteria)
-  let allResults: SearchResult[] = textResults
+  const scoreMap = new Map<string, SearchResult>()
+  for (const r of textResults) {
+    scoreMap.set(r.photo, { ...r, ...getStoredFields(r.photo) })
+  }
+
   if (descIndex) {
     const descResults = descIndex.search(criteria)
     // Merge: combine scores for items found in both, union otherwise
-    const scoreMap = new Map<string, SearchResult>()
-    for (const r of textResults) {
-      scoreMap.set(r.photo, r)
-    }
     for (const r of descResults) {
       const existing = scoreMap.get(r.photo)
       if (existing) {
@@ -72,8 +72,8 @@ const doSearch = () => {
         scoreMap.set(r.photo, { ...r, ...getStoredFields(r.photo) })
       }
     }
-    allResults = Array.from(scoreMap.values()).sort((a, b) => b.score - a.score)
   }
+  const allResults = Array.from(scoreMap.values()).sort((a, b) => b.score - a.score)
   const filtered = allResults.filter((tag, idx, array) => array.findIndex((doc: SearchResult) => tag.photo === doc.photo) === idx)
   global.self.postMessage(['setDidSearch', true])
   global.self.postMessage(['setSearchResults', filtered.slice(0, 40)])
@@ -96,7 +96,7 @@ export async function init () {
   index = MiniSearch.loadJSON(data, {
     idField: 'photo',
     fields: ['text'],
-    storeFields: ['date_unixtime', 'photo', 'width', 'height', 'reactions'],
+    storeFields: ['date_unixtime', 'photo', 'width', 'height', 'reactions', 'chat_id', 'message_id'],
     searchOptions: {
       combineWith: 'AND',
       prefix: true

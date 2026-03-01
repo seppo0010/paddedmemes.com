@@ -225,9 +225,15 @@ function App() {
       )}
       {containerWidth > 0 && (
         <Masonry columns={columns} spacing={2}>
-          {memesToShow.map(({ height, width, photo, reactions }) => (
+          {memesToShow.map(({ height, width, photo, reactions, chat_id, message_id }) => (
             <div key={photo} className="meme-card" style={{ height: containerWidth * height / (columns * width) }}>
-              <MemeImage photo={photo} />
+              {chat_id && message_id ? (
+                <a href={`https://t.me/c/${chat_id.replace('-100', '')}/${message_id}`} target="_blank" rel="noreferrer">
+                  <MemeImage photo={photo} />
+                </a>
+              ) : (
+                <MemeImage photo={photo} />
+              )}
               {reactions && reactions.length > 0 && (
                 <div className="reactions" aria-label="Reactions">
                   {reactions.map(({ emoji, count }) => (
